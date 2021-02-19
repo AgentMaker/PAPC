@@ -1,0 +1,5 @@
+numpy
+h5py
+scipy
+paddlepaddle >= 2.0.0
+visualdl >= 2.0.0
