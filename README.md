@@ -53,7 +53,8 @@ python train.py
 
 ## Better Experience
 This project is mounted on Baidu AIStudio which provides a free GPU environment like Google Colab. You can run this project on it for free. <br><br>
-Url: [PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1531789)
+Url1: [Origin PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1531789)
+Url2: [PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1555858)
 
 ## Contact us
 Email : [agentmaker@163.com]()
