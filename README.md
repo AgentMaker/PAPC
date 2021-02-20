@@ -52,7 +52,7 @@ python train.py
 
 
 ## Better Experience
-This project is mounted on Baidu AIStudio which provides a free GPU environment like Google Colab. You can run this project on it for free. 
+This project is mounted on Baidu AIStudio which provides a free GPU environment like Google Colab. You can run this project on it for free. <br>
 Url: [PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1531789)
 
 ## Contact us
