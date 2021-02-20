@@ -50,7 +50,7 @@ python train.py
 
 ## 更好的体验
 我们的项目挂载在百度AIStudio上面，AIStudio能够提供免费的GPU资源用于训练，类似Google的Colab一样。您可以在AIStudio上面自由地运行这个项目且是免费的。<br><br>
-项目网址1: [Origin PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1531789)
+项目网址1: [Origin PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1531789)<br>
 项目网址2: [PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1555858)
 
 
