@@ -23,7 +23,7 @@ Welcome to PAPC(Paddle PointCloud) which is a deep learning for point clouds pla
 
 ## Installation
 
-### step 1. Install PaddlePaddle
+### Step 1. Install PaddlePaddle
 
 System Requirements:
 * PaddlePaddle >= 2.0.0rc
@@ -31,7 +31,7 @@ System Requirements:
 
 Highly recommend you install the GPU version of PaddlePaddle, due to large overhead of segmentation models, otherwise it could be out of memory while running the models. For more detailed installation tutorials, please refer to the official website of [PaddlePaddle](https://www.paddlepaddle.org.cn/documentation/docs/zh/2.0-beta/install/index_cn.html)。
 
-### step 2. Download PAPC repo
+### Step 2. Download PAPC repo
 
 ```shell
 git clone https://github.com/AgentMaker/PAPC.git
