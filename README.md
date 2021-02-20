@@ -38,13 +38,14 @@ git clone https://github.com/AgentMaker/PAPC.git
 ```
 
 
-## Help For Training
+## Training
+
+### Help For Training
 ```shell
 python train.py --help
 ```
 
-
-## Quick Training
+### Quick Training
 ```shell
 python train.py
 ```
