@@ -17,7 +17,7 @@ PAPC是使用飞桨(PaddlePaddle)框架搭建的用于深度学习的点云处�
 - [PointNet++SSG](./PAPC/models/segment/pointnet2.py)
 - [PointNet++MSG](./PAPC/models/segment/pointnet2.py)
 
-## Installation
+## 安装
 
 ### 1. 安装PaddlePaddle
 
@@ -36,13 +36,14 @@ git clone https://github.com/AgentMaker/PAPC.git
 ```
 
 
-## 训练参数查看
+## 训练
+
+### 训练参数查看
 ```shell
 python train.py --help
 ```
 
-
-## 快速训练
+### 快速训练
 ```shell
 python train.py
 ```
