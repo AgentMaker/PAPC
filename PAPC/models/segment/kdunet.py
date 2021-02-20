@@ -8,9 +8,12 @@ class KDUNet(nn.Layer):
         self.downsample = Downsample()
         self.upsample = Upsample(num_classes)
 
-    def forward(self, x, split_dims_v):
+    def forward(self, inputs):
+        x = paddle.to_tensor(inputs[0])
+        split_dims_v = inputs[1]
         x, shortcut = self.downsample(x, split_dims_v)
         x = self.upsample(x, shortcut)
+        x = x.transpose([0, 2, 1])
 
         return x
 

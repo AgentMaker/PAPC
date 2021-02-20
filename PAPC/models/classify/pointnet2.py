@@ -22,7 +22,8 @@ class PointNet2_SSG_Clas(nn.Layer):
         self.drop2 = nn.Dropout(0.4)
         self.fc3 = nn.Linear(256, num_classes)
 
-    def forward(self, xyz):
+    def forward(self, inputs):
+        xyz = paddle.to_tensor(inputs)
         B, _, _ = xyz.shape
         if self.normal_channel:
             norm = xyz[:, 3:, :]
@@ -55,7 +56,8 @@ class PointNet2_MSG_Clas(nn.Layer):
         self.drop2 = nn.Dropout(0.5)
         self.fc3 = nn.Linear(256, num_classes)
 
-    def forward(self, xyz):
+    def forward(self, inputs):
+        xyz = paddle.to_tensor(inputs)
         B, _, _ = xyz.shape
         if self.normal_channel:
             norm = xyz[:, 3:, :]

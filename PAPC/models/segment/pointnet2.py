@@ -23,7 +23,9 @@ class PointNet2_SSG_Seg(nn.Layer):
         self.drop1 = nn.Dropout(0.5)
         self.conv2 = nn.Conv1D(128, num_parts, 1)
 
-    def forward(self, xyz, cls_label):
+    def forward(self, inputs):
+        xyz = paddle.to_tensor(inputs[0])
+        cls_label = Categorical(inputs[1], self.num_classes)
         # Set Abstraction layers
         B,C,N = xyz.shape
         if self.normal_channel:
@@ -44,6 +46,7 @@ class PointNet2_SSG_Seg(nn.Layer):
         feat =  F.relu(self.bn1(self.conv1(l0_points)))
         x = self.drop1(feat)
         x = self.conv2(x)
+        x = x.transpose([0, 2, 1])
 
         return x
 
@@ -67,7 +70,9 @@ class PointNet2_MSG_Seg(nn.Layer):
         self.drop1 = nn.Dropout(0.5)
         self.conv2 = nn.Conv1D(128, num_parts, 1)
 
-    def forward(self, xyz, cls_label):
+    def forward(self, inputs):
+        xyz = paddle.to_tensor(inputs[0])
+        cls_label = Categorical(inputs[1], self.num_classes)
         # Set Abstraction layers
         B,C,N = xyz.shape
         if self.normal_channel:
@@ -88,11 +93,6 @@ class PointNet2_MSG_Seg(nn.Layer):
         feat = F.relu(self.bn1(self.conv1(l0_points)))
         x = self.drop1(feat)
         x = self.conv2(x)
+        x = x.transpose([0, 2, 1])
 
         return x
-
-if __name__ == '__main__':
-    model = PointNet2_SSG_Seg()
-    paddle.summary(model, ((64, 3, 1024), (64, 16, 1)))
-    model = PointNet2_MSG_Seg()
-    paddle.summary(model, ((64, 3, 1024), (64, 16, 1)))

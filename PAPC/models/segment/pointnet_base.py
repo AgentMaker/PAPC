@@ -28,6 +28,7 @@ class PointNet_Basic_Seg(nn.Layer):
             Return:
                 x: predicts, [B, max_points, num_classes]
         """
+        inputs = paddle.to_tensor(inputs[0])
         x1, x2 = self.pointnet_bacic(inputs)
         x2 = paddle.max(x2, axis=-1, keepdim=True)
         x2 = paddle.tile(x2, [1, 1, self.max_points])

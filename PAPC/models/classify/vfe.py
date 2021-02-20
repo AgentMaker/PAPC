@@ -21,7 +21,8 @@ class VFE_Clas(nn.Layer):
             Return:
                 x: predicts, [B, num_classes]
         """
-        x = self.vfe(inputs)
+        x = paddle.to_tensor(inputs)
+        x = self.vfe(x)
         x = self.fc(x)
 
         return x

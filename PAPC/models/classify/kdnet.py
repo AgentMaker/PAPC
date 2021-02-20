@@ -17,7 +17,7 @@ class KDNet(nn.Layer):
         self.conv10 = nn.Conv1D(512, 128*3, 1, 1)
         self.fc = nn.Linear(128, num_classes)
 
-    def forward(self, x, split_dims_v):
+    def forward(self, inputs):
         def kdconv(x, dim, featdim, select, conv):
             x = F.relu(conv(x))
             x = paddle.reshape(x, (-1, featdim, 3, dim))
@@ -28,6 +28,8 @@ class KDNet(nn.Layer):
             x = paddle.max(x, axis=-1)
 
             return x
+        x = paddle.to_tensor(inputs[0])
+        split_dims_v = inputs[1]
 
         x = kdconv(x, 1024, 32, split_dims_v[0], self.conv1)
         x = kdconv(x, 512, 64, split_dims_v[1], self.conv2)

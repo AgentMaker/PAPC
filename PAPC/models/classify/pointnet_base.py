@@ -38,7 +38,8 @@ class PointNet_Basic_Clas(nn.Layer):
             Return:
                 x: predicts, [B, num_classes]
         """
-        x = self.mlp_1(inputs)
+        x = paddle.to_tensor(inputs)
+        x = self.mlp_1(x)
         x = self.mlp_2(x)
         x = paddle.max(x, axis=2)
         x = self.fc(x)

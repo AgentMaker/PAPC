@@ -18,7 +18,8 @@ class VoxNet(nn.Layer):
             nn.Linear(128, num_classes)
         )
     def forward(self, inputs):
-        x = self.backbone(inputs)
+        x = paddle.to_tensor(inputs)
+        x = self.backbone(x)
         x = paddle.reshape(x, (-1, 32*6*6*6))
         x = self.head(x)
 
