@@ -77,12 +77,12 @@ class PointNet_Clas(nn.Layer):
         x = paddle.to_tensor(inputs)
         batchsize = x.shape[0]
 
-        t_net = self.input_transform_net(inputs)
+        t_net = self.input_transform_net(x)
         t_net = paddle.squeeze(t_net, axis=-1)
         t_net = self.input_fc(t_net)
         t_net = paddle.reshape(t_net, [batchsize, 3, 3])
 
-        x = paddle.transpose(inputs, (0, 2, 1))
+        x = paddle.transpose(x, (0, 2, 1))
         x = paddle.matmul(x, t_net)
         x = paddle.transpose(x, (0, 2, 1))
         x = self.mlp_1(x)

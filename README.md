@@ -7,18 +7,22 @@ Welcome to PAPC(Paddle PointCloud) which is a deep learning for point clouds pla
 
 ## Model Zoo
 ### Clas
-- [VoxNet](./PAPC/models/classify/voxnet.py)
-- [Kd-Networks](./PAPC/models/classify/kdnet.py)
-- [PointNet-Basic](./PAPC/models/classify/pointnet_base.py)
-- [PointNet](./PAPC/models/classify/pointnet.py)
-- [PointNet++SSG](./PAPC/models/classify/pointnet2.py)
-- [PointNet++MSG](./PAPC/models/classify/pointnet2.py)
+- [VoxNet](./PAPC/models/classify/voxnet)
+- [Kd-Networks](./PAPC/models/classify/kdnet)
+- [PointNet-Basic](./PAPC/models/classify/pointnet_base)
+- [PointNet](./PAPC/models/classify/pointnet)
+- [PointNet++SSG](./PAPC/models/classify/pointnet2)
+- [PointNet++MSG](./PAPC/models/classify/pointnet2)
 ### Seg
-- [Kd-Unet](./PAPC/models/segment/kdunet.py)
-- [PointNet-Basic](./PAPC/models/segment/pointnet_base.py)
-- [PointNet](./PAPC/models/segment/pointnet.py)
-- [PointNet++SSG](./PAPC/models/segment/pointnet2.py)
-- [PointNet++MSG](./PAPC/models/segment/pointnet2.py)
+- [Kd-Unet](./PAPC/models/segment/kdunet)
+- [PointNet-Basic](./PAPC/models/segment/pointnet_base)
+- [PointNet](./PAPC/models/segment/pointnet)
+- [PointNet++SSG](./PAPC/models/segment/pointnet2)
+- [PointNet++MSG](./PAPC/models/segment/pointnet2)
+
+
+## Dataset
+Based on ShapeNet dataset(.h5 format). Support custom dataset(data format refered to ShapeNet dataset).
 
 
 ## Installation
