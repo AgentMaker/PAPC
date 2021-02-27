@@ -4,18 +4,21 @@ PAPC是使用飞桨(PaddlePaddle)框架搭建的用于深度学习的点云处�
 
 ## 模型库
 ### 分类模型
-- [VoxNet](./PAPC/models/classify/voxnet.py)
-- [Kd-Networks](./PAPC/models/classify/kdnet.py)
-- [PointNet-Basic](./PAPC/models/classify/pointnet_base.py)
-- [PointNet](./PAPC/models/classify/pointnet.py)
-- [PointNet++SSG](./PAPC/models/classify/pointnet2.py)
-- [PointNet++MSG](./PAPC/models/classify/pointnet2.py)
+- [VoxNet](./PAPC/models/classify/voxnet)
+- [Kd-Networks](./PAPC/models/classify/kdnet)
+- [PointNet-Basic](./PAPC/models/classify/pointnet_base)
+- [PointNet](./PAPC/models/classify/pointnet)
+- [PointNet++SSG](./PAPC/models/classify/pointnet2)
+- [PointNet++MSG](./PAPC/models/classify/pointnet2)
 ### 分割模型
-- [Kd-Unet](./PAPC/models/segment/kdunet.py)
-- [PointNet-Basic](./PAPC/models/segment/pointnet_base.py)
-- [PointNet](./PAPC/models/segment/pointnet.py)
-- [PointNet++SSG](./PAPC/models/segment/pointnet2.py)
-- [PointNet++MSG](./PAPC/models/segment/pointnet2.py)
+- [Kd-Unet](./PAPC/models/segment/kdunet)
+- [PointNet-Basic](./PAPC/models/segment/pointnet_base)
+- [PointNet](./PAPC/models/segment/pointnet)
+- [PointNet++SSG](./PAPC/models/segment/pointnet2)
+- [PointNet++MSG](./PAPC/models/segment/pointnet2)
+
+## 数据集
+在ShapeNet数据集(.h5格式)上训练。支持自定义数据集(数据格式参照ShapeNet数据集)。
 
 ## 安装
 

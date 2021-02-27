@@ -10,6 +10,8 @@ def DataLoader(model_name, max_point, batchsize, path='./data/', mode1='clas' ,m
             return KDClasDataLoader(max_point, batchsize, path, mode2)
         elif model_name == 'pointnet_basic':
             return PNClasDataLoader(max_point, batchsize, path, mode2)
+        elif model_name == 'pointnet':
+            return PNClasDataLoader(max_point, batchsize, path, mode2)
         elif model_name == 'vfe':
             return PNClasDataLoader(max_point, batchsize, path, mode2)
         elif model_name == 'pointnet2_ssg':
@@ -22,6 +24,8 @@ def DataLoader(model_name, max_point, batchsize, path='./data/', mode1='clas' ,m
         if model_name == 'kdunet':
             return KDSegDataLoader(max_point, batchsize, path, mode2)
         elif model_name == 'pointnet_basic':
+            return PNSegDataLoader(max_point, batchsize, path, mode2)
+        elif model_name == 'pointnet':
             return PNSegDataLoader(max_point, batchsize, path, mode2)
         elif model_name == 'vfe':
             return PNSegDataLoader(max_point, batchsize, path, mode2)
