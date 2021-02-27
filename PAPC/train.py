@@ -5,7 +5,7 @@ from PAPC.models.segment import *
 from PAPC.models.loss import *
 from PAPC.datasets import *
 
-def init_model(model_name='pointnet_basic', mode='clas', num_classes=16, num_parts=50):
+def init_model(model_name='pointnet_basic', mode='clas', num_classes=16, num_parts=50, max_point=2048):
     model, loss_fn = None, None
     if mode == 'clas':
         if model_name == 'voxnet':
@@ -16,6 +16,9 @@ def init_model(model_name='pointnet_basic', mode='clas', num_classes=16, num_par
             loss_fn = CrossEntropyLoss()
         elif model_name == 'pointnet_basic':
             model = PointNet_Basic_Clas(num_classes=num_classes)
+            loss_fn = CrossEntropyLoss()
+        elif model_name == 'pointnet':
+            model = PointNet_Clas(num_classes=num_classes, max_point=max_point)
             loss_fn = CrossEntropyLoss()
         elif model_name == 'vfe':
             model = VFE_Clas(num_classes=num_classes)
@@ -34,6 +37,9 @@ def init_model(model_name='pointnet_basic', mode='clas', num_classes=16, num_par
             loss_fn = CrossEntropyLoss()
         elif model_name == 'pointnet_basic':
             model = PointNet_Basic_Seg(num_classes=num_parts)
+            loss_fn = CrossEntropyLoss()
+        elif model_name == 'pointnet':
+            model = PointNet_Seg(num_classes=num_parts, max_point=max_point)
             loss_fn = CrossEntropyLoss()
         elif model_name == 'vfe':
             model = VFE_Seg(num_classes=num_parts)
@@ -86,7 +92,7 @@ def train(
     train_loader = DataLoader(model_name, max_point, batchsize, path, mode, 'train')
     val_loader = DataLoader(model_name, max_point, batchsize, path, mode, 'val')
 
-    model, loss_fn = init_model(model_name, mode, num_classes, num_parts)
+    model, loss_fn = init_model(model_name, mode, num_classes, num_parts, max_point)
     model.train()
     optim = init_optim(model, learning_rate, weight_decay)
 
