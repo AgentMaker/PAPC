@@ -19,6 +19,9 @@ Welcome to PAPC(Paddle PointCloud) which is a deep learning for point clouds pla
 - [PointNet](./PAPC/models/segment/pointnet)
 - [PointNet++SSG](./PAPC/models/segment/pointnet2)
 - [PointNet++MSG](./PAPC/models/segment/pointnet2)
+### Detect
+- [PointRCNN](./PAPC/models/detect/PointRCNN)
+- [Pointpillars-building](./PAPC/models/detect/Pointpillars-building)
 
 
 ## Dataset

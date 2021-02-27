@@ -16,6 +16,9 @@ PAPC是使用飞桨(PaddlePaddle)框架搭建的用于深度学习的点云处�
 - [PointNet](./PAPC/models/segment/pointnet)
 - [PointNet++SSG](./PAPC/models/segment/pointnet2)
 - [PointNet++MSG](./PAPC/models/segment/pointnet2)
+### 目标检测
+- [PointRCNN](./PAPC/models/detect/PointRCNN)
+- [Pointpillars-building](./PAPC/models/detect/Pointpillars-building)
 
 ## 数据集
 在ShapeNet数据集(.h5格式)上训练。支持自定义数据集(数据格式参照ShapeNet数据集)。
