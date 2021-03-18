@@ -4,6 +4,9 @@ English | [简体中文](README_CN.md)
 
 Welcome to PAPC(Paddle PointCloud) which is a deep learning for point clouds platform based on pure PaddlePaddle.
 
+## Show
+
+![](https://ai-studio-static-online.cdn.bcebos.com/c43ee4383fa447f6abd3c6b6f27110d9ea649fa453f64b74af6b9753af3405ad)
 
 ## Model Zoo
 ### Clas
