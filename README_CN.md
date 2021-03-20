@@ -33,7 +33,7 @@ PAPC是使用飞桨(PaddlePaddle)框架搭建的用于深度学习的点云处�
 
 * Python >= 3.6+
 
-由于图像分割模型计算开销大，推荐在GPU版本的PaddlePaddle下使用PaddleSeg。推荐安装10.0以上的CUDA环境。安装教程请见[PaddlePaddle官网](https://www.paddlepaddle.org.cn/documentation/docs/zh/2.0-rc/install/index_cn.html)。
+由于点云模型计算开销大，推荐在GPU版本的PaddlePaddle下使用PAPC。推荐安装10.0以上的CUDA环境。安装教程请见[PaddlePaddle官网](https://www.paddlepaddle.org.cn/documentation/docs/zh/2.0-rc/install/index_cn.html)。
 
 ### 2. 下载PAPC仓库
 
