@@ -2,6 +2,10 @@
 
 PAPC是使用飞桨(PaddlePaddle)框架搭建的用于深度学习的点云处理套件。它的名字PAPC是取Paddle中的PA和PointCloud中的PC组合而来。
 
+## 展示
+
+![](https://ai-studio-static-online.cdn.bcebos.com/c43ee4383fa447f6abd3c6b6f27110d9ea649fa453f64b74af6b9753af3405ad)
+
 ## 模型库
 ### 分类模型
 - [VoxNet](./PAPC/models/classify/voxnet)
