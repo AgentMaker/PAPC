@@ -1,0 +1,208 @@
+# based on OpenMMlab
+CLASS_NAMES: ['Car', 'Pedestrian', 'Cyclist']
+
+# DATA_CONFIG:
+
+
+VOXEL_GENERATOR:
+    POINT_CLOUD_RANGE : [0, -39.68, -3, 69.12, 39.68, 1]
+    VOXEL_SIZE : [0.16, 0.16, 4]
+    MAX_NUMBER_OF_POINTS_PER_VOXEL : 100
+    MAX_VOXELS: 12000
+
+
+BOX_CODER: 
+    BOX_CODER_TYPE: ground_box3d_coder
+    LINEAR_DIM: False
+    ENCODE_ANGLE_VECTOR: False
+    Z_FIXED: ~
+    H_FIXED: ~
+
+
+TARGET_ASSIGNER:
+    ANCHOR_GENERATORS:
+        -
+            anchor_generator_stride:
+                sizes: [1.6, 3.9, 1.56] # wlh
+                strides: [0.32, 0.32, 0.0] # if generate only 1 z_center, z_stride will be ignored
+                offsets: [0.16, -39.52, -1.78] # origin_offset + strides / 2
+                rotations: [0, 1.57] # 0, pi/2
+                matched_threshold : 0.6
+                unmatched_threshold : 0.45
+                class_name: 'Car'
+
+    SAMPLE_POSITIVE_FRACTION : -1
+    SAMPLE_SIZE : 512
+    REGION_SIMILARITY_CALCULATOR: nearest_iou_similarity
+
+
+MODEL:
+    XAVIER: False 
+    NAME: PointPillars
+    GRID_SIZE: [1,2,3,4]
+    CODE_SIZE: []
+    NUM_CLASS: 2
+    NUM_INPUT_FEATURES: 4
+    NUM_POINT_FEATURES: 4
+    POINT_CLOUD_RANGE: [0, -40, -3, 70.4, 40, 1]
+    ENCODE_RAD_ERROR_BY_SIN: False
+    WITHOUT_REFLECTIVITY: False
+    LIDAR_INPUT: True 
+
+    PILLAR_FEATURE_EXTRACTOR: 
+        name: PillarFeatureNet
+        # num_input_features: 4
+        use_norm: True
+        num_filters: [64]
+        with_distance: False
+        voxel_size: [0.2, 0.2, 4]
+
+
+    MIDDLE_FEATURE_EXTRACTOR:
+        name: PointPillarsScatter
+        num_filters_down1: [64]
+        num_filters_down2: [64,64]
+        # output_shape: [3,4,5]
+        # num_input_features: 64
+
+
+    BACKBONE:
+        name: RPN
+        use_norm: True
+        layer_nums: [3, 5, 5]
+        layer_strides: [2, 2, 2]
+        num_filters: [64, 128, 256]
+        upsample_strides: [1, 2, 4]
+        num_upsample_filters: [128, 128, 128]
+        num_input_filters: 64
+        num_anchor_per_loc: 2
+        use_direction_classifier: True
+        use_groupnorm: False
+        num_groups: 32
+        use_bev: False
+        box_code_size: 7
+        encode_background_as_zeros: True
+
+    OUTPUTS:
+        
+
+    POST_PROCESSING:
+        use_sigmoid_score: True
+        use_aux_classifier: False
+        use_rotate_nms: True
+        use_multi_class_nms: False
+        nms_pre_max_size: 1000
+        nms_post_max_size: 300
+        nms_score_threshold: 0.15
+        nms_iou_threshold: 0.5
+        use_bev: False
+        post_center_limit_range: [0, -39.68, -5, 69.12, 39.68, 5]
+        box_code:
+            ground_box3d_coder:
+                linear_dim: False
+                encode_angle_vector: False
+    
+    LOSS:
+        pos_class_weight: 1.0
+        neg_class_weight: 1.0
+        direction_loss_weight: 2.0
+        loss_norm_type: NormByNumPositives
+
+        classification_loss: 
+            weighted_sigmoid_focal: 
+                alpha: 0.25
+                gamma: 2.0
+                anchorwise_output: true
+
+        localization_loss:
+            weighted_smooth_l1:
+                sigma: 3.0
+                code_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        
+        classification_weight: 1.0
+        localization_weight: 2.0
+    
+    PREDICT:
+        multiclass_nms: False
+        use_rotate_nms: False
+
+
+TRAIN_CONFIG:
+    OPTIMIZER:
+        name: adam_optimizer
+        learning_rate: 
+            name: exponential_decay_learning_rate
+            initial_learning_rate: 0.0002
+            decay_steps: 27840 # 1856 steps per epoch * 15 epochs
+            decay_factor: 0.8
+            staircase: True
+        weight_decay: 0.0001
+        use_moving_average: False 
+    
+    INTER_OP_PARALLELISM_THREADS: 4
+    INTRA_OP_PARALLELISM_THREADS: 4
+    STEPS: 5196800 # 1856 steps per epoch * 2800 epochs
+    STEPS_PER_EVAL: 9280 # 1856 steps per epoch * 5 epochs
+    SAVE_CHECKPOINTS_SECS : 1800 # half hour
+    SAVE_SUMMARY_STEPS : 10
+    ENABLE_MIXED_PRECISION: False
+    LOSS_SCALE_FACTOR : 512.0
+    CLEAR_METRICS_EVERY_EPOCH: False 
+
+TRAIN_INPUT_READER:
+    RECORD_FILE_PATH: "/media/hova/hova88/kitti/kitti_train.tfrecord"
+    CLASS_NAMES: ["Car"]
+    MAX_NUM_EPOCHS: 2800
+    BATCH_SIZE: 2
+    PREFETCH_SIZE: 25
+    MAX_NUMBER_OF_VOXELS: 12000
+    SHUFFLE_POINTS: True
+    NUM_WORKERS: 2
+    GROUNDTRUTH_LOCALIZATION_NOISE_STD: [0.25, 0.25, 0.25]
+    GROUNDTRUTH_ROTATION_UNIFORM_NOISE: [-0.15707963267, 0.15707963267]
+    GLOBAL_ROTATION_UNIFORM_NOISE: [-0.78539816, 0.78539816]
+    GLOBAL_SCALING_UNIFORM_NOISE: [0.95, 1.05]
+    GLOBAL_RANDOM_ROTATION_RANGE_PER_OBJECT: [0, 0]
+    ANCHOR_AREA_THRESHOLD: 1
+    REMOVE_POINTS_AFTER_SAMPLE: False
+    GROUNDTRUTH_POINTS_DROP_PERCENTAGE: 0.0
+    GROUNDTRUTH_DROP_MAX_KEEP_POINTS: 15
+    DATABASE_SAMPLER:
+        database_info_path: "/media/hova/hova88/kitti/kitti_dbinfos_train.pkl"
+        sample_groups:
+            -
+                name_to_max_num:
+                    Car: 15
+                    # key: "Car"
+                    # value: 15
+
+        database_prep_steps:
+            filter_by_min_num_points:
+                min_num_point_pairs:
+                    Car: 5
+                    # key: "Car"
+                    # value: 5
+            filter_by_difficulty:
+                removed_difficulties: [-1]
+        global_random_rotation_range_per_object: [0, 0]
+        rate: 1.0
+    REMOVE_UNKNOWN_EXAMPLES: False
+    REMOVE_ENVIRONMENT: False
+    KITTI_INFO_PATH: "/media/hova/hova88/kitti/kitti_infos_train.pkl"
+    KITTI_ROOT_PATH: "/media/hova/hova88/kitti"
+        
+
+EVAL_INPUT_READER:
+    RECORD_FILE_PATH: "/media/hova/hova88/kitti/kitti_val.tfrecord"
+    CLASS_NAMES: ["Car"]
+    BATCH_SIZE: 2
+    MAX_NUM_EPOCHS : 160
+    PREFETCH_SIZE : 25
+    MAX_NUMBER_OF_VOXELS: 12000
+    SHUFFLE_POINTS: false
+    NUM_WORKERS: 3
+    ANCHOR_AREA_THRESHOLD: 1
+    REMOVE_ENVIRONMENT: false
+    KITTI_INFO_PATH: "/media/hova/hova88/kitti/kitti_infos_val.pkl"
+    KITTI_ROOT_PATH: "/media/hova/hova88/kitti"  
+
