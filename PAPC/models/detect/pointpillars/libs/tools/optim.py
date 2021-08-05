@@ -49,7 +49,7 @@ class MixedPrecisionWrapper(object):
             raise ValueError("must provide a paddle.optimizer.Optimizer")
         self.optimizer = optimizer
         if hasattr(self.optimizer, 'name'):
-            self.name = self.optimizer.name  # for ckpt system
+            self.name = self.optimizer.name  # for pd system
         param_groups_copy = []
         for i, group in enumerate(optimizer.param_groups):
             group_copy = {n: v for n, v in group.items() if n != 'params'}

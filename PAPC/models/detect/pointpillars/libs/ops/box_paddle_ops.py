@@ -17,8 +17,8 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
         boxes ([N, 7] Tensor): normal boxes: x, y, z, l, w, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, za, wa, la, ha, ra = paddle.split(anchors, 1, axis=-1)
-    xg, yg, zg, wg, lg, hg, rg = paddle.split(boxes, 1, axis=-1)
+    xa, ya, za, wa, la, ha, ra = paddle.split(anchors, 7, axis=-1)
+    xg, yg, zg, wg, lg, hg, rg = paddle.split(boxes, 7, axis=-1)
     za = za + ha / 2
     zg = zg + hg / 2
     diagonal = paddle.sqrt(la**2 + wa**2)
@@ -51,14 +51,13 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, za, wa, la, ha, ra = paddle.split(anchors, 1, axis=-1)
+    xa, ya, za, wa, la, ha, ra = paddle.split(anchors, box_encodings.shape[-1], axis=-1)
     if encode_angle_to_vector:
         xt, yt, zt, wt, lt, ht, rtx, rty = paddle.split(
-            box_encodings, 1, axis=-1)
+            box_encodings, box_encodings.shape[-1], axis=-1)
 
     else:
-        xt, yt, zt, wt, lt, ht, rt = paddle.split(box_encodings, 1, axis=-1)
-
+        xt, yt, zt, wt, lt, ht, rt = paddle.split(box_encodings, box_encodings.shape[-1], axis=-1)
     za = za + ha / 2
     diagonal = paddle.sqrt(la**2 + wa**2)
     xg = xt * diagonal + xa
@@ -69,7 +68,6 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         wg = (wt + 1) * wa
         hg = (ht + 1) * ha
     else:
-
         lg = paddle.exp(lt) * la
         wg = paddle.exp(wt) * wa
         hg = paddle.exp(ht) * ha
@@ -90,8 +88,8 @@ def bev_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=Fals
         boxes ([N, 7] Tensor): normal boxes: x, y, z, l, w, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, wa, la, ra = paddle.split(anchors, 1, axis=-1)
-    xg, yg, wg, lg, rg = paddle.split(boxes, 1, axis=-1)
+    xa, ya, wa, la, ra = paddle.split(anchors, 5, axis=-1)
+    xg, yg, wg, lg, rg = paddle.split(boxes, 5, axis=-1)
     diagonal = paddle.sqrt(la**2 + wa**2)
     xt = (xg - xa) / diagonal
     yt = (yg - ya) / diagonal
@@ -122,13 +120,13 @@ def bev_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_
         boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, wa, la, ra = paddle.split(anchors, 1, axis=-1)
+    xa, ya, wa, la, ra = paddle.split(anchors, 5, axis=-1)
     if encode_angle_to_vector:
         xt, yt, wt, lt, rtx, rty = paddle.split(
             box_encodings, 1, axis=-1)
 
     else:
-        xt, yt, wt, lt, rt = paddle.split(box_encodings, 1, axis=-1)
+        xt, yt, wt, lt, rt = paddle.split(box_encodings, 5, axis=-1)
 
     # xt, yt, zt, wt, lt, ht, rt = paddle.split(box_encodings, 1, axis=-1)
     diagonal = paddle.sqrt(la**2 + wa**2)

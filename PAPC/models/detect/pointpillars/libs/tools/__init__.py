@@ -30,7 +30,7 @@ def get_paddings_indicator(actual_num,max_num,axis = 0):
     max_num_shape[axis+1] = -1
     max_num = paddle.arange(max_num, dtype="int64").reshape(max_num_shape)
 
-    paddings_indicator = actual_num.int() > max_num
+    paddings_indicator = actual_num.astype("int64") > max_num
 
     return paddings_indicator
 

@@ -2,6 +2,8 @@ import numpy as np
 import paddle
 import paddle.nn as nn
 from libs.tools import change_default_args
+from libs.tools import GroupNorm
+from libs.nn import Empty
 
 class RPN(nn.Layer):
     def __init__(self,
@@ -38,18 +40,18 @@ class RPN(nn.Layer):
         if use_norm:
             if use_groupnorm:
                 BatchNorm2d = change_default_args(
-                    num_groups=num_groups, eps=1e-3)(GroupNorm)
+                    num_groups=num_groups, epsilon=1e-3)(GroupNorm)
             else:
                 BatchNorm2d = change_default_args(
-                    eps=1e-3, momentum=0.01)(nn.BatchNorm2d)
-            Conv2d = change_default_args(bias=False)(nn.Conv2d)
-            ConvTranspose2d = change_default_args(bias=False)(
-                nn.ConvTranspose2d)
+                    epsilon=1e-3, momentum=0.01)(nn.BatchNorm2D)
+            Conv2d = change_default_args(bias_attr=False)(nn.Conv2D)
+            ConvTranspose2d = change_default_args(bias_attr=False)(
+                nn.Conv2DTranspose)
         else:
             BatchNorm2d = Empty
-            Conv2d = change_default_args(bias=True)(nn.Conv2d)
-            ConvTranspose2d = change_default_args(bias=True)(
-                nn.ConvTranspose2d)
+            Conv2d = change_default_args(bias_attr=True)(nn.Conv2D)
+            ConvTranspose2d = change_default_args(bias_attr=True)(
+                nn.Conv2DTranspose)
 
         # note that when stride > 1, conv2d with same padding isn't
         # equal to pad-conv2d. we should use pad-conv2d.
@@ -66,19 +68,18 @@ class RPN(nn.Layer):
                 nn.MaxPool2D(2, 2),
             )
             block2_input_filters += 64
-
-        self.block1 = nn.Sequential(
+        block1_layer = [
             nn.Pad2D(1),
-            Conv2d(
-                num_input_filters, num_filters[0], 3, stride=layer_strides[0]),
+            Conv2d(num_input_filters, num_filters[0], 3, stride=layer_strides[0]),
             BatchNorm2d(num_filters[0]),
             nn.ReLU(),
-        )
+        ]
         for i in range(layer_nums[0]):
-            self.block1.add(
+            block1_layer.append(
                 Conv2d(num_filters[0], num_filters[0], 3, padding=1))
-            self.block1.add(BatchNorm2d(num_filters[0]))
-            self.block1.add(nn.ReLU())
+            block1_layer.append(BatchNorm2d(num_filters[0]))
+            block1_layer.append(nn.ReLU())
+        self.block1 = nn.Sequential(*block1_layer)
         self.deconv1 = nn.Sequential(
             ConvTranspose2d(
                 num_filters[0],
@@ -88,21 +89,18 @@ class RPN(nn.Layer):
             BatchNorm2d(num_upsample_filters[0]),
             nn.ReLU(),
         )
-        self.block2 = nn.Sequential(
-                nn.Pad2D(1),
-            Conv2d(
-                block2_input_filters,
-                num_filters[1],
-                3,
-                stride=layer_strides[1]),
+        block2_layer = [
+            nn.Pad2D(1),
+            Conv2d(block2_input_filters, num_filters[1], 3, stride=layer_strides[1]),
             BatchNorm2d(num_filters[1]),
-            nn.ReLU(),
-        )
+            nn.ReLU()
+        ]
         for i in range(layer_nums[1]):
-            self.block2.add(
+            block2_layer.append(
                 Conv2d(num_filters[1], num_filters[1], 3, padding=1))
-            self.block2.add(BatchNorm2d(num_filters[1]))
-            self.block2.add(nn.ReLU())
+            block2_layer.append(BatchNorm2d(num_filters[1]))
+            block2_layer.append(nn.ReLU())
+        self.block2 = nn.Sequential(*block2_layer)
         self.deconv2 = nn.Sequential(
             ConvTranspose2d(
                 num_filters[1],
@@ -112,17 +110,18 @@ class RPN(nn.Layer):
             BatchNorm2d(num_upsample_filters[1]),
             nn.ReLU(),
         )
-        self.block3 = nn.Sequential(
+        block3_layer = [
             nn.Pad2D(1),
             Conv2d(num_filters[1], num_filters[2], 3, stride=layer_strides[2]),
             BatchNorm2d(num_filters[2]),
             nn.ReLU(),
-        )
+        ]
         for i in range(layer_nums[2]):
-            self.block3.add(
+            block3_layer.append(
                 Conv2d(num_filters[2], num_filters[2], 3, padding=1))
-            self.block3.add(BatchNorm2d(num_filters[2]))
-            self.block3.add(nn.ReLU())
+            block3_layer.append(BatchNorm2d(num_filters[2]))
+            block3_layer.append(nn.ReLU())
+        self.block3 = nn.Sequential(*block3_layer)
         self.deconv3 = nn.Sequential(
             ConvTranspose2d(
                 num_filters[2],

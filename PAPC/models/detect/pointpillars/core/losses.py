@@ -162,10 +162,11 @@ class WeightedSmoothL1LocalizationLoss(Loss):
       loss: a float tensor of shape [batch_size, num_anchors] tensor
         representing the value of the loss function.
     """
+    # print("++++++++++++++++++++++++++++++++++++START CAL_L1_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     diff = prediction_tensor - target_tensor
     if self._code_weights is not None:
-      code_weights = self._code_weights.type_as(prediction_tensor)
-      diff = code_weights.view(1, 1, -1) * diff
+      code_weights = self._code_weights.astype(prediction_tensor.dtype)
+      diff = code_weights.reshape((1, 1, -1)) * diff
     abs_diff = paddle.abs(diff)
     abs_diff_lt_1 = paddle.less_equal(abs_diff, paddle.to_tensor(1 / (self._sigma**2))).astype(abs_diff.dtype)
     loss = abs_diff_lt_1 * 0.5 * paddle.pow(abs_diff * self._sigma, 2) \
@@ -178,22 +179,21 @@ class WeightedSmoothL1LocalizationLoss(Loss):
       anchorwise_smooth_l1norm = paddle.sum(loss, 2)#  * weights
       if weights is not None:
         anchorwise_smooth_l1norm *= weights
+    # print("++++++++++++++++++++++++++++++++++++OVER CAL_L1_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return anchorwise_smooth_l1norm
 
 def _sigmoid_cross_entropy_with_logits(logits, labels):
   # to be compatible with tensorflow, we don't use ignore_idx
-  loss = paddle.clip(logits, min=0) - logits * labels.type_as(logits)
+  loss = paddle.clip(logits, min=0) - logits * labels.astype(logits.dtype)
   loss += paddle.log1p(paddle.exp(-paddle.abs(logits)))
-  # transpose_param = [0] + [param[-1]] + param[1:-1]
-  # logits = logits.permute(*transpose_param)
-  # loss_ftor = nn.NLLLoss(reduce=False)
-  # loss = loss_ftor(F.logsigmoid(logits), labels)
   return loss
 
 def _softmax_cross_entropy_with_logits(logits, labels):
+  # print("++++++++++++++++++++++++++++++++++++START SOFT_CROSS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
   param = list(range(len(logits.shape)))
   transpose_param = [0] + [param[-1]] + param[1:-1]
-  logits = logits.permute(*transpose_param) # [N, ..., C] -> [N, C, ...]
+  logits = logits.transpose(transpose_param) # [N, ..., C] -> [N, C, ...]
+  # print("++++++++++++++++++++++++++++++++++++START SOFT_CROSS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
   loss_ftor = nn.CrossEntropyLoss(reduction="none")
   loss = loss_ftor(logits, paddle.argmax(labels, axis=-1))
   return loss
@@ -332,7 +332,7 @@ class SoftmaxFocalClassificationLoss(Loss):
     weights = weights.unsqueeze(2)
     if class_indices is not None:
       weights *= indices_to_dense_vector(class_indices,
-            prediction_tensor.shape[2]).view(1, 1, -1).type_as(prediction_tensor)
+            prediction_tensor.shape[2]).reshape((1, 1, -1)).astype(prediction_tensor.dtype)
     per_entry_cross_ent = (_softmax_cross_entropy_with_logits(
         labels=target_tensor, logits=prediction_tensor))
     # convert [N, num_anchors] to [N, num_anchors, num_classes]
@@ -381,12 +381,13 @@ class WeightedSoftmaxClassificationLoss(Loss):
       loss: a float tensor of shape [batch_size, num_anchors]
         representing the value of the loss function.
     """
+    # print("++++++++++++++++++++++++++++++++++++START WEIGHT_SOFT_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     num_classes = prediction_tensor.shape[-1]
-    prediction_tensor = paddle.divide(
-        prediction_tensor, self._logit_scale)
+    prediction_tensor = prediction_tensor / self._logit_scale
     per_row_cross_ent = (_softmax_cross_entropy_with_logits(
         labels=target_tensor.reshape((-1, num_classes)),
         logits=prediction_tensor.reshape((-1, num_classes))))
+    # print("++++++++++++++++++++++++++++++++++++OVER WEIGHT_SOFT_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return per_row_cross_ent.reshape((weights.shape)) * weights
 
 

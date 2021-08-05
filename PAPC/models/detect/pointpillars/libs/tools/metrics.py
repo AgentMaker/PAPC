@@ -59,7 +59,7 @@ class Accuracy(nn.Layer):
 
         num_examples = paddle.sum(weights)
         num_examples = paddle.clip(num_examples, min=1.0).astype("float32")
-        total = paddle.sum((pred_labels == labels.long()).astype("float32"))
+        total = paddle.sum((pred_labels.astype("int64") == labels.astype("int64")).astype("float32"))
         self.count += num_examples
         self.total += total
         return self.value.cpu()
@@ -173,19 +173,18 @@ def _calc_binary_metrics(labels,
                          weights=None,
                          ignore_idx=-1,
                          threshold=0.5):
-
-    pred_labels = (scores > threshold).long()
+    pred_labels = (scores > threshold).astype("int64")
     N, *Ds = labels.shape
-    labels = labels.view(N, int(np.prod(Ds)))
-    pred_labels = pred_labels.view(N, int(np.prod(Ds)))
+    labels = labels.reshape((N, int(np.prod(Ds))))
+    pred_labels = pred_labels.reshape((N, int(np.prod(Ds))))
     pred_trues = pred_labels > 0
     pred_falses = pred_labels == 0
     trues = labels > 0
     falses = labels == 0
-    true_positives = (weights * (trues & pred_trues).astype("float32")).sum()
-    true_negatives = (weights * (falses & pred_falses).astype("float32")).sum()
-    false_positives = (weights * (falses & pred_trues).astype("float32")).sum()
-    false_negatives = (weights * (trues & pred_falses).astype("float32")).sum()
+    true_positives = ((weights * (trues.astype("int64") + pred_trues.astype("int64")) == 2).astype("float32")).sum()
+    true_negatives = ((weights * (falses.astype("int64") + pred_falses.astype("int64")) == 2).astype("float32")).sum()
+    false_positives = ((weights * (falses.astype("int64") + pred_trues.astype("int64")) == 2).astype("float32")).sum()
+    false_negatives = ((weights * (trues.astype("int64") + pred_falses.astype("int64")) == 2).astype("float32")).sum()
     return true_positives, true_negatives, false_positives, false_negatives
 
 
@@ -220,9 +219,9 @@ class PrecisionRecall(nn.Layer):
             total_scores = F.sigmoid(preds)
         else:
             if self._use_sigmoid_score:
-                total_scores = F.sigmoid(preds)[..., 1:]
+                total_scores = F.sigmoid(preds)[:, 1:]
             else:
-                total_scores = F.softmax(preds, axis=-1)[..., 1:]
+                total_scores = F.softmax(preds, axis=-1)[:, 1:]
         """
         if preds.shape[self._dim] == 1:  # BCE
             scores = paddle.sigmoid(preds)
@@ -236,6 +235,7 @@ class PrecisionRecall(nn.Layer):
             else:
                 scores = F.softmax(preds, dim=self._dim)[:, ..., 1:].sum(-1)
         """
+        # print("++++++++++++++++++++++++++++++++++++START RECALL++++++++++++++++++++++++++++++++++++++++++++++++")
         scores = paddle.max(total_scores, axis=-1)
         if weights is None:
             weights = (labels != self._ignore_idx).astype("float32")
@@ -252,7 +252,8 @@ class PrecisionRecall(nn.Layer):
             if prec_count > 0:
                 self.prec_count[i] += prec_count
                 self.prec_total[i] += tp
-
+        
+        # print("++++++++++++++++++++++++++++++++++++OVER RECALL++++++++++++++++++++++++++++++++++++++++++++++++")
         return self.value
         # return (total /  num_examples.data).cpu()
     @property

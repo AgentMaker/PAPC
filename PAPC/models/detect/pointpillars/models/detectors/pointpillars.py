@@ -16,8 +16,7 @@ import libs
 from libs.tools import metrics
 
 
-from models.bones.pillars import (PillarFeatureNet, PointPillarsScatter,
-                                  PillarFeatureNet_trt, PointPillarsScatter_trt)
+from models.bones.pillars import (PillarFeatureNet, PointPillarsScatter)
 from models.bones.rpn import RPN
 
 from core.losses import (WeightedSigmoidClassificationLoss,
@@ -123,7 +122,8 @@ class PointPillars(nn.Layer):
         return int(self.global_step.numpy()[0])
 
         
-    def forward(self,example):
+    def forward(self, example):
+        # print("++++++++++++++++++++++++++++++++++++START FORWARD++++++++++++++++++++++++++++++++++++++++++++++++")
         voxels = example['voxels']
         num_points = example['num_points']
         coors = example["coordinates"]
@@ -133,14 +133,16 @@ class PointPillars(nn.Layer):
         # features: [num_voxels, max_num_points_per_voxel, 7]
         # num_points: [num_voxels]
         # coors: [num_voxels, 4]
+        # print("++++++++++++++++++++++++++++++++++++START PFN++++++++++++++++++++++++++++++++++++++++++++++++")
         voxel_features = self.pfn(voxels, num_points, coors)
-
+        # print("++++++++++++++++++++++++++++++++++++START MFE++++++++++++++++++++++++++++++++++++++++++++++++")
         spatial_features = self.mfe(voxel_features,coors,batch_size_dev)
+        # print("++++++++++++++++++++++++++++++++++++START RPN++++++++++++++++++++++++++++++++++++++++++++++++")
         if self._use_bev:
             preds_dict = self.rpn(spatial_features,example['bev_map'])
         else:
             preds_dict = self.rpn(spatial_features)
-
+            # print("++++++++++++++++++++++++++++++++++++OVER RPN++++++++++++++++++++++++++++++++++++++++++++++++")
         box_preds = preds_dict["box_preds"]
         cls_preds = preds_dict["cls_preds"]
         self._total_forward_time += time.time() - t
@@ -148,15 +150,19 @@ class PointPillars(nn.Layer):
             labels = example['labels']
             reg_targets = example['reg_targets']
 
+            # print("++++++++++++++++++++++++++++++++++++START PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
             cls_weights, reg_weights, cared = prepare_loss_weights(
                 labels,
                 pos_cls_weight=self._pos_cls_weight,
                 neg_cls_weight=self._neg_cls_weight,
                 loss_norm_type=self._loss_norm_type,
                 dtype=voxels.dtype)
+            # print("++++++++++++++++++++++++++++++++++++OVER PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
             cls_targets = labels * cared.astype(labels.dtype)
             cls_targets = cls_targets.unsqueeze(-1)
+            # print("++++++++++++++++++++++++++++++++++++OVER PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
 
+            # print("++++++++++++++++++++++++++++++++++++START CREATE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
             loc_loss,cls_loss = create_loss(
                 self._loc_loss_ftor,
                 self._cls_loss_ftor,
@@ -170,6 +176,7 @@ class PointPillars(nn.Layer):
                 encode_rad_error_by_sin=self._encode_rad_error_by_sin,
                 encode_background_as_zeros=self._encode_background_as_zeros,
                 box_code_size=self._box_coder.code_size,)
+            # print("++++++++++++++++++++++++++++++++++++OVER CREATE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
 
             loc_loss_reduced = loc_loss.sum() / batch_size_dev
             loc_loss_reduced *= self._loc_loss_weight
@@ -179,15 +186,18 @@ class PointPillars(nn.Layer):
             cls_loss_reduced = cls_loss.sum() / batch_size_dev
             cls_loss_reduced *= self._cls_loss_weight
             loss = loc_loss_reduced + cls_loss_reduced
+            # print("++++++++++++++++++++++++++++++++++++OVER CAL_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
             if self._use_direction_classifier:
-                dir_targets =  get_direction_target(example['anchors'],
+                # print("++++++++++++++++++++++++++++++++++++START CLAS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
+                dir_targets = get_direction_target(example['anchors'],
                                                    reg_targets)
                 dir_logits = preds_dict["dir_cls_preds"].reshape((batch_size_dev, -1, 2))
-                weights = (labels > 0).type_as(dir_logits)
+                weights = (labels > 0).astype(dir_logits.dtype)
                 weights /= paddle.clip(weights.sum(-1, keepdim=True), min=1.0)
                 dir_loss = self._dir_loss_ftor(dir_logits, dir_targets, weights=weights)
                 dir_loss = dir_loss.sum() / batch_size_dev
                 loss += dir_loss * self._direction_loss_weight
+                # print("++++++++++++++++++++++++++++++++++++OVER CLAS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
 
             return {
                 "loss": loss,
@@ -202,6 +212,7 @@ class PointPillars(nn.Layer):
                 "cared": cared,
             }
         else:
+            # print("++++++++++++++++++++++++++++++++++++OVER EVAL_PREDICT++++++++++++++++++++++++++++++++++++++++++++++++")
             return self.predict(example, preds_dict)
     
     def predict(self, example, preds_dict):
@@ -221,13 +232,11 @@ class PointPillars(nn.Layer):
 
         batch_box_preds = preds_dict["box_preds"]
         batch_cls_preds = preds_dict["cls_preds"]
-        batch_box_preds = batch_box_preds.reshape((batch_size, -1, self._box_coder.code_size))
-                                
+        batch_box_preds = batch_box_preds.reshape((batch_size, -1, self._box_coder.code_size))             
 
         num_class_with_bg = self._num_class
         if not self._encode_background_as_zeros:
             num_class_with_bg = self._num_class + 1
-
         batch_cls_preds = batch_cls_preds.reshape((batch_size, -1, num_class_with_bg))
         batch_box_preds = self._box_coder.decode_paddle(batch_box_preds,
                                                        batch_anchors)
@@ -238,10 +247,7 @@ class PointPillars(nn.Layer):
             batch_dir_preds = [None] * batch_size
 
         predictions_dicts = []
-
-        for box_preds, cls_preds, dir_preds, img_idx, a_mask in zip(
-            batch_box_preds, batch_cls_preds, batch_dir_preds,batch_imgidx, batch_anchors_mask):
-
+        for box_preds, cls_preds, dir_preds, img_idx, a_mask in zip(batch_box_preds, batch_cls_preds, batch_dir_preds, batch_imgidx, batch_anchors_mask.astype("int64")):
             if a_mask is not None:
                 box_preds = box_preds[a_mask]
                 cls_preds = cls_preds[a_mask]
@@ -422,17 +428,20 @@ class PointPillars(nn.Layer):
         if not self._encode_background_as_zeros:
             num_class += 1
         cls_preds = cls_preds.reshape((batch_size, -1, num_class))
+        # print("++++++++++++++++++++++++++++++++++++START RPN_ACC++++++++++++++++++++++++++++++++++++++++++++++++")
         rpn_acc = self.rpn_acc(labels, cls_preds, sampled).numpy()[0]
+        # print("++++++++++++++++++++++++++++++++++++OVER RPB_ACC++++++++++++++++++++++++++++++++++++++++++++++++")
         prec, recall = self.rpn_metrics(labels, cls_preds, sampled)
+        # print("++++++++++++++++++++++++++++++++++++OVER RPN_METRICS++++++++++++++++++++++++++++++++++++++++++++++++")
         prec = prec.numpy()
         recall = recall.numpy()
         rpn_cls_loss = self.rpn_cls_loss(cls_loss).numpy()[0]
         rpn_loc_loss = self.rpn_loc_loss(loc_loss).numpy()[0]
         ret = {
             "cls_loss": float(rpn_cls_loss),
-            "cls_loss_rt": float(cls_loss.data.numpy()),
+            "cls_loss_rt": float(cls_loss.numpy()[0]),
             'loc_loss': float(rpn_loc_loss),
-            "loc_loss_rt": float(loc_loss.data.numpy()),
+            "loc_loss_rt": float(loc_loss.numpy()[0]),
             "rpn_acc": float(rpn_acc),
         }
         for i, thresh in enumerate(self.rpn_metrics.thresholds):
@@ -461,6 +470,7 @@ def prepare_loss_weights(labels,
                          neg_cls_weight= 1.0,
                          loss_norm_type= 'NormByNumPositives',
                          dtype= paddle.float32):
+    # print("++++++++++++++++++++++++++++++++++++START IN PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
 
     cared = labels >= 0
     #cared : [N,num_anchors]
@@ -469,6 +479,7 @@ def prepare_loss_weights(labels,
     negatives_cls_weights = negatives.astype(dtype) * neg_cls_weight
     cls_weights = neg_cls_weight + pos_cls_weight * positives.astype(dtype)
     reg_weights = positives.astype(dtype)
+    # print("++++++++++++++++++++++++++++++++++++START IN PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     if loss_norm_type == 'NormByNumExamples':
         num_examples = cared.astype(dtype).sum(1, keepdim=True)
         num_examples = paddle.clip(num_examples, min=1.0)
@@ -476,7 +487,7 @@ def prepare_loss_weights(labels,
         bbox_normalizer = positives.sum(1, keepdim=True).astype(dtype)
         reg_weights /= paddle.clip(bbox_normalizer, min=1.0)
     elif loss_norm_type == 'NormByNumPositives':  # for focal loss
-        pos_normalizer = positives.sum(1, keepdim=True).astype(dtype)
+        pos_normalizer = positives.astype(dtype).sum(1, keepdim=True)
         reg_weights /= paddle.clip(pos_normalizer, min=1.0)
         cls_weights /= paddle.clip(pos_normalizer, min=1.0)
     elif loss_norm_type == 'NormByNumPosNeg':
@@ -490,7 +501,8 @@ def prepare_loss_weights(labels,
         cls_weights /= cls_normalizer
     else:
         raise ValueError(
-            f"unknown loss norm type. available: {list(LossNormType)}")
+            f"unknown loss norm type.")
+    # print("++++++++++++++++++++++++++++++++++++START IN PRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return cls_weights, reg_weights, cared
 
 def create_loss(loc_loss_ftor,
@@ -512,31 +524,42 @@ def create_loss(loc_loss_ftor,
     else:
         cls_preds = cls_preds.reshape((batch_size,-1,num_class+1))
     cls_targets = cls_targets.squeeze(-1)
+    # print("++++++++++++++++++++++++++++++++++++START ONE_HOT++++++++++++++++++++++++++++++++++++++++++++++++")
     one_hot_targets = libs.tools.one_hot(
         cls_targets, depth=num_class+1,dtype=box_preds.dtype
     )
+    # print("++++++++++++++++++++++++++++++++++++OVER ONE_HOT++++++++++++++++++++++++++++++++++++++++++++++++")
     if encode_background_as_zeros:
-        one_hot_targets = one_hot_targets[..., 1:]
+        # print("++++++++++++++++++++++++++++++++++++START ONE_HOT_CHANS++++++++++++++++++++++++++++++++++++++++++++++++")
+        one_hot_targets = one_hot_targets[:, :, 1:]
+        # print("++++++++++++++++++++++++++++++++++++OVER ONE_HOT_CHANS++++++++++++++++++++++++++++++++++++++++++++++++")
     if encode_rad_error_by_sin:
         # sin(a-b) = sina*cosb-cosa*sinb
+        # print("++++++++++++++++++++++++++++++++++++START SIN++++++++++++++++++++++++++++++++++++++++++++++++")
         box_preds, reg_targets = add_sin_difference(box_preds, reg_targets)
+        # print("++++++++++++++++++++++++++++++++++++START SIN++++++++++++++++++++++++++++++++++++++++++++++++")
+    # print("++++++++++++++++++++++++++++++++++++START LOC_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     loc_losses = loc_loss_ftor(
         box_preds, reg_targets, weights=reg_weights)  # [N, M]
+    # print("++++++++++++++++++++++++++++++++++++OVER LOC_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
+    # print("++++++++++++++++++++++++++++++++++++START CLAS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     cls_losses = cls_loss_ftor(
         cls_preds, one_hot_targets, weights=cls_weights)  # [N, M]
+    # print("++++++++++++++++++++++++++++++++++++OVER CLAS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return loc_losses, cls_losses
 
 def add_sin_difference(boxes1, boxes2):
-    rad_pred_encoding = paddle.sin(boxes1[..., -1:]) * paddle.cos(
-        boxes2[..., -1:])
-    rad_tg_encoding = paddle.cos(boxes1[..., -1:]) * paddle.sin(boxes2[..., -1:])
-    boxes1 = paddle.concat([boxes1[..., :-1], rad_pred_encoding], axis=-1)
-    boxes2 = paddle.concat([boxes2[..., :-1], rad_tg_encoding], axis=-1)
+    rad_pred_encoding = paddle.sin(boxes1[:, :, -1:]) * paddle.cos(
+        boxes2[:, :, -1:])
+    rad_tg_encoding = paddle.cos(boxes1[:, :, -1:]) * paddle.sin(boxes2[:, :, -1:])
+    boxes1 = paddle.concat([boxes1[:, :, :-1], rad_pred_encoding], axis=-1)
+    boxes2 = paddle.concat([boxes2[:, :, :-1], rad_tg_encoding], axis=-1)
     return boxes1, boxes2
 
 def _get_pos_neg_loss(cls_loss, labels):
     # cls_loss: [N, num_anchors, num_class]
     # labels: [N, num_anchors]
+    # print("++++++++++++++++++++++++++++++++++++START POS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     batch_size = cls_loss.shape[0]
     if cls_loss.shape[-1] == 1 or len(cls_loss.shape) == 2:
         cls_pos_loss = (labels > 0).astype(cls_loss.dtype) * cls_loss.reshape((batch_size, -1))
@@ -544,16 +567,19 @@ def _get_pos_neg_loss(cls_loss, labels):
         cls_pos_loss = cls_pos_loss.sum() / batch_size
         cls_neg_loss = cls_neg_loss.sum() / batch_size
     else:
-        cls_pos_loss = cls_loss[..., 1:].sum() / batch_size
-        cls_neg_loss = cls_loss[..., 0].sum() / batch_size
+        cls_pos_loss = cls_loss[:, :, 1:].sum() / batch_size
+        cls_neg_loss = cls_loss[:, :, 0].sum() / batch_size
+    # print("++++++++++++++++++++++++++++++++++++OVER POS_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return cls_pos_loss, cls_neg_loss
 
 def get_direction_target(anchors, reg_targets, one_hot=True):
+    # print("++++++++++++++++++++++++++++++++++++START DIRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     batch_size = reg_targets.shape[0]
     anchors = anchors.reshape((batch_size, -1, 7))
-    rot_gt = reg_targets[..., -1] + anchors[..., -1]
+    rot_gt = reg_targets[:, :, -1] + anchors[:, :, -1]
     dir_cls_targets = (rot_gt > 0).astype("int64")
     if one_hot:
         dir_cls_targets = libs.tools.one_hot(
             dir_cls_targets, 2, dtype=anchors.dtype)
+    # print("++++++++++++++++++++++++++++++++++++OVER DIRE_LOSS++++++++++++++++++++++++++++++++++++++++++++++++")
     return dir_cls_targets

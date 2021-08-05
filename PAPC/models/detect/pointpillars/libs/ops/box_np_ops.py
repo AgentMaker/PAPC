@@ -201,7 +201,7 @@ def corners_nd(dims, origin=0.5):
     return corners
 
 
-@numba.njit
+# @numba.njit
 def corners_2d_jit(dims, origin=0.5):
     ndim = 2
     corners_norm = np.array([[0, 0], [0, 1], [1, 1], [1, 0]], dtype=dims.dtype)
@@ -210,7 +210,7 @@ def corners_2d_jit(dims, origin=0.5):
         (1, 2**ndim, ndim))
     return corners
 
-@numba.njit
+# @numba.njit
 def corners_3d_jit(dims, origin=0.5):
     ndim = 3
     corners_norm = np.array([0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1], dtype=dims.dtype).reshape((8, 3))
@@ -220,7 +220,7 @@ def corners_3d_jit(dims, origin=0.5):
         (1, 2**ndim, ndim))
     return corners
 
-@numba.njit
+# @numba.njit
 def corner_to_standup_nd_jit(boxes_corner):
     num_boxes = boxes_corner.shape[0]
     ndim = boxes_corner.shape[-1]
@@ -383,7 +383,7 @@ def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
     return corners
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def box2d_to_corner_jit(boxes):
     num_box = boxes.shape[0]
     corners_norm = np.zeros((4, 2), dtype=boxes.dtype)
@@ -644,13 +644,13 @@ def remove_outside_points(points, rect, Trv2c, P2, image_shape):
     frustum -= T
     frustum = np.linalg.inv(R) @ frustum.T
     frustum = camera_to_lidar(frustum.T, rect, Trv2c)
-    frustum_surfaces = corner_to_surfaces_3d_jit(frustum[np.newaxis, ...])
+    frustum_surfaces = corner_to_surfaces_3d_jit(frustum[np.newaxis, ...]).astype(numba.float32)
     indices = points_in_convex_polygon_3d_jit(points[:, :3], frustum_surfaces)
     points = points[indices.reshape([-1])]
     return points
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def iou_jit(boxes, query_boxes, eps=0.0):
     """calculate box iou. note that jit version runs 2x faster than cython in 
     my machine!
@@ -718,7 +718,7 @@ def corner_to_surfaces_3d(corners):
     return surfaces
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=False)
 def corner_to_surfaces_3d_jit(corners):
     """convert 3d box corners from corner function above
     to surfaces that normal vectors all direct to internal.
@@ -768,7 +768,7 @@ def image_box_region_area(img_cumsum, bbox):
     return ret
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def sparse_sum_for_anchors_mask(coors, shape):
     ret = np.zeros(shape, dtype=np.float32)
     for i in range(coors.shape[0]):
@@ -776,7 +776,7 @@ def sparse_sum_for_anchors_mask(coors, shape):
     return ret
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def fused_get_anchors_area(dense_map, anchors_bv, stride, offset,
                            grid_size):
     anchor_coor = np.zeros(anchors_bv.shape[1:], dtype=np.int32)
@@ -805,7 +805,7 @@ def fused_get_anchors_area(dense_map, anchors_bv, stride, offset,
     return ret
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def distance_similarity(points,
                         qpoints,
                         dist_norm,

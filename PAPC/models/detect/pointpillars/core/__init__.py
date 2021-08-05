@@ -4,7 +4,7 @@ import pickle
 
 import paddle
 
-from core.box_coders import (GroundBox3dCoderTorch,BevBoxCoderTorch)
+from core.box_coders import (GroundBox3dCoderPaddle, BevBoxCoderPaddle)
 from core.voxel_generator import VoxelGenerator
 from core.target_assigner import TargetAssigner
 from core.similarity_calculator import (RotateIouSimilarity,NearestIouSimilarity,DistanceSimilarity)
@@ -13,7 +13,7 @@ from core import losses
 
 from data.dataset import KittiDataset, DatasetWrapper
 from data.preprocess import prep_pointcloud
-from libs.preprocess import DBFilterByMinNumPoint, DBFilterByDifficulty,DataBasePreprocessor
+from libs.preprocess import DBFilterByMinNumPoint, DBFilterByDifficulty, DataBasePreprocessor
 from libs.ops.sample_ops import DataBaseSamplerV2
 from libs.tools import learning_schedules
 
@@ -119,9 +119,9 @@ def build_box_coder(box_coder_config):
 
     if box_coder_config.BOX_CODER_TYPE == 'ground_box3d_coder':
  
-        return GroundBox3dCoderTorch(box_coder_config.LINEAR_DIM, box_coder_config.ENCODE_ANGLE_VECTOR)
+        return GroundBox3dCoderPaddle(box_coder_config.LINEAR_DIM, box_coder_config.ENCODE_ANGLE_VECTOR)
     elif box_coder_config.BOX_CODER_TYPE == 'bev_box_coder':
-        return BevBoxCoderTorch(box_coder_config.LINEAR_DIM, box_coder_config.ENCODE_ANGLE_VECTOR,
+        return BevBoxCoderPaddle(box_coder_config.LINEAR_DIM, box_coder_config.ENCODE_ANGLE_VECTOR,
                                 box_coder_config.Z_FIXED, box_coder_config.H_FIXED)
     else:
         raise ValueError("unknown box_coder type")
@@ -295,7 +295,7 @@ def build_optimizer(optimizer_config, params, name=None):
     if optimizer_config.name == 'rms_prop_optimizer':
 
         optimizer = paddle.optimizer.RMSProp(
-            params,
+            parameters = params,
             learning_rate=_get_base_lr_by_lr_scheduler(optimizer_config.learning_rate),
             rho=optimizer_config.decay,
             momentum=optimizer_config.momentum_optimizer_value,
@@ -305,14 +305,14 @@ def build_optimizer(optimizer_config, params, name=None):
     if optimizer_config.name =='momentum_optimizer':
 
         optimizer = paddle.optimizer.SGD(
-            params,
+            parameters = params,
             learning_rate=_get_base_lr_by_lr_scheduler(optimizer_config.learning_rate),
             weight_decay=optimizer_config.weight_decay)
 
     if optimizer_config.name =='adam_optimizer':
 
         optimizer = paddle.optimizer.Adam(
-            params,
+            parameters = params,
             learning_rate=_get_base_lr_by_lr_scheduler(optimizer_config.learning_rate),
             weight_decay=optimizer_config.weight_decay)
 

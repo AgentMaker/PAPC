@@ -248,7 +248,7 @@ def _box_single_to_corner_jit(boxes):
     return box_corners
 
 
-@numba.njit
+# @numba.njit
 def noise_per_box(boxes, valid_mask, loc_noises, rot_noises):
     # boxes: [N, 5]
     # valid_mask: [N]
@@ -270,7 +270,7 @@ def noise_per_box(boxes, valid_mask, loc_noises, rot_noises):
                                      rot_mat_T)
                 current_corners += boxes[i, :2] + loc_noises[i, j, :2]
                 coll_mat = box_collision_test(
-                    current_corners.reshape(1, 4, 2), box_corners)
+                    current_corners.reshape((1, 4, 2)), box_corners)
                 coll_mat[0, i] = False
                 # print(coll_mat)
                 if not coll_mat.any():
@@ -804,7 +804,7 @@ def global_rotation_v2(gt_boxes, points, min_rad=-np.pi / 4,
 
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def box_collision_test(boxes, qboxes, clockwise=True):
     N = boxes.shape[0]
     K = qboxes.shape[0]
