@@ -67,4 +67,5 @@ Url1: [Origin PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/15
 Url2: [PAPC Project](https://aistudio.baidu.com/aistudio/projectdetail/1555858)
 
 ## Contact us
-Email : [agentmaker@163.com]()
+Email : [agentmaker@163.com]()<br>
+QQ Group : 1005109853
